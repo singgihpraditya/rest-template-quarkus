@@ -1,0 +1,28 @@
+# Build output
+target/
+
+# Quarkus dev mode generated
+.quarkus/
+
+# Uploaded files (runtime data)
+uploads/
+
+# Log files
+logs/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.classpath
+*.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven wrapper (opsional, hapus baris ini jika ingin commit .mvn/)
+.mvn/
+mvnw
+mvnw.cmd

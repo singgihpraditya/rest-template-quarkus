@@ -1,0 +1,1142 @@
+{
+  "info": {
+    "_postman_id": "rest-template-quarkus-api-collection",
+    "name": "REST Template Quarkus API",
+    "description": "Postman Collection untuk REST Template Quarkus — Quarkus 3.8.3 + JWT\n\n**Setup:**\n1. Jalankan aplikasi dengan profile local: `mvn quarkus:dev -Dquarkus.profile=local`\n2. Import collection ini ke Postman\n3. Jalankan request **Login (Admin)** di folder Auth — token akan otomatis tersimpan ke variable `token`\n4. Semua request lain sudah dikonfigurasi menggunakan token tersebut\n\n**Default credentials:**\n- Admin: `admin / admin123`\n- User: `user / user123`\n\n**Swagger UI:** http://localhost:8080/q/swagger-ui\n**H2 Console:** http://localhost:8080/h2-console (JDBC URL: jdbc:h2:mem:logitrackdb)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "Base URL aplikasi"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token — otomatis terisi setelah request Login"
+    },
+    {
+      "key": "category_id",
+      "value": "1",
+      "type": "string",
+      "description": "ID kategori — ubah sesuai data yang ada"
+    },
+    {
+      "key": "product_id",
+      "value": "1",
+      "type": "string",
+      "description": "ID produk — ubah sesuai data yang ada"
+    },
+    {
+      "key": "permission_id",
+      "value": "",
+      "type": "string",
+      "description": "ID permission rule — otomatis terisi setelah request Tambah Permission"
+    },
+    {
+      "key": "uploaded_filename",
+      "value": "",
+      "type": "string",
+      "description": "Nama file tersimpan — otomatis terisi setelah request Upload File"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Endpoint autentikasi: login, register, dan get current user",
+      "item": [
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    const token = json.output_schema.access_token;",
+                  "    pm.collectionVariables.set('token', token);",
+                  "    console.log('Token tersimpan:', token.substring(0, 30) + '...');",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Error code RST-000', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.error_schema.error_code).to.eql('RST-000');",
+                  "});",
+                  "pm.test('Token ada', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.output_schema.access_token).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login sebagai admin. Token JWT akan otomatis tersimpan ke variable `token`."
+          }
+        },
+        {
+          "name": "Login (User)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.output_schema.access_token);",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user\",\n  \"password\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login sebagai user biasa. Token JWT akan otomatis tersimpan ke variable `token`."
+          }
+        },
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Error code RST-000', () => {",
+                  "    pm.expect(pm.response.json().error_schema.error_code).to.eql('RST-000');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newuser\",\n  \"password\": \"newpassword123\",\n  \"full_name\": \"New User\",\n  \"email\": \"newuser@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Daftarkan akun baru. Default role: ROLE_USER."
+          }
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Ada username', () => {",
+                  "    pm.expect(pm.response.json().output_schema.username).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Ambil data user yang sedang login berdasarkan JWT token."
+          }
+        },
+        {
+          "name": "Get Current User (dengan X-Request-Id custom)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "X-Request-Id", "value": "my-custom-request-001", "description": "Custom requestId — akan muncul di log dan response header" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Demo pengiriman X-Request-Id custom. Nilai ini akan dikembalikan di response header X-Request-Id."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Category",
+      "description": "CRUD kategori produk. GET publik, POST/PUT/DELETE butuh ROLE_ADMIN.",
+      "item": [
+        {
+          "name": "List Kategori",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Ada pagination', () => {",
+                  "    const body = pm.response.json().output_schema;",
+                  "    pm.expect(body).to.have.property('content');",
+                  "    pm.expect(body).to.have.property('total_elements');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"],
+              "query": [
+                { "key": "page", "value": "0", "description": "Halaman (mulai dari 0)" },
+                { "key": "size", "value": "10", "description": "Jumlah item per halaman" },
+                { "key": "search", "value": "", "description": "Kata kunci pencarian (opsional)", "disabled": true }
+              ]
+            },
+            "description": "Ambil semua kategori dengan pagination. Endpoint publik, tidak butuh token."
+          }
+        },
+        {
+          "name": "List Kategori (dengan search)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories?page=0&size=10&search=Electronics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" },
+                { "key": "search", "value": "Electronics" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail Kategori",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Ada id', () => {",
+                  "    pm.expect(pm.response.json().output_schema.id).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "{{category_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Tambah Kategori",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "    const id = pm.response.json().output_schema.id;",
+                  "    pm.collectionVariables.set('category_id', id);",
+                  "    console.log('Category ID tersimpan:', id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Furniture\",\n  \"description\": \"Perabot rumah tangga\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Butuh ROLE_ADMIN. ID kategori baru akan tersimpan ke variable `category_id`."
+          }
+        },
+        {
+          "name": "Update Kategori",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Furniture Updated\",\n  \"description\": \"Perabot rumah tangga (diperbarui)\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "{{category_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Hapus Kategori",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "{{category_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Statistik Kategori (jumlah produk per kategori)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Output adalah array', () => {",
+                  "    pm.expect(pm.response.json().output_schema).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "stats"]
+            },
+            "description": "Jumlah produk per kategori. Hasilnya di-cache — panggil ulang untuk verifikasi cache hit."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product",
+      "description": "CRUD produk. GET publik, POST/PUT/DELETE butuh ROLE_ADMIN.",
+      "item": [
+        {
+          "name": "List Produk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Ada pagination', () => {",
+                  "    const body = pm.response.json().output_schema;",
+                  "    pm.expect(body).to.have.property('content');",
+                  "    pm.expect(body).to.have.property('total_elements');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Produk (dengan search)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products?page=0&size=10&search=iPhone",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" },
+                { "key": "search", "value": "iPhone" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail Produk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Produk by Kategori",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/category/{{category_id}}?page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "category", "{{category_id}}"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Top Produk by Harga (native query)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Output adalah array', () => {",
+                  "    pm.expect(pm.response.json().output_schema).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/top?limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "top"],
+              "query": [
+                { "key": "limit", "value": "5", "description": "Jumlah produk yang dikembalikan" }
+              ]
+            },
+            "description": "Ambil N produk termahal. Menggunakan native SQL query dengan LIMIT."
+          }
+        },
+        {
+          "name": "Produk by Tag (native query)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/tag/smartphone",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "tag", "smartphone"]
+            },
+            "description": "Cari produk berdasarkan nama tag. Gunakan tag: smartphone, laptop, apple, fashion, java, programming"
+          }
+        },
+        {
+          "name": "Tambah Produk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "    const id = pm.response.json().output_schema.id;",
+                  "    pm.collectionVariables.set('product_id', id);",
+                  "    console.log('Product ID tersimpan:', id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Galaxy S24 Ultra\",\n  \"description\": \"Flagship Samsung terbaru\",\n  \"price\": 18999000,\n  \"stock\": 50,\n  \"category_id\": 1,\n  \"tag_ids\": [1, 2]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"]
+            },
+            "description": "Butuh ROLE_ADMIN. `tag_ids` merujuk ke ID tag yang sudah ada di DB (1=smartphone, 2=laptop, 3=apple, 4=fashion, 5=java, 6=programming)."
+          }
+        },
+        {
+          "name": "Update Produk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Galaxy S24 Ultra (Updated)\",\n  \"description\": \"Flagship Samsung terbaru — diperbarui\",\n  \"price\": 17999000,\n  \"stock\": 45,\n  \"category_id\": 1,\n  \"tag_ids\": [1]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Hapus Produk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Endpoint Permission",
+      "description": "Manajemen aturan otorisasi dinamis. Semua endpoint butuh ROLE_ADMIN.",
+      "item": [
+        {
+          "name": "List Semua Permission",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Output adalah array', () => {",
+                  "    pm.expect(pm.response.json().output_schema).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/permissions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions"]
+            }
+          }
+        },
+        {
+          "name": "Detail Permission",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/permissions/{{permission_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", "{{permission_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Tambah Permission Rule Baru",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "    const id = pm.response.json().output_schema.id;",
+                  "    pm.collectionVariables.set('permission_id', id);",
+                  "    console.log('Permission ID tersimpan:', id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"http_method\": \"GET\",\n  \"url_pattern\": \"/api/orders/**\",\n  \"required_role\": \"ROLE_USER\",\n  \"sort_order\": 50,\n  \"description\": \"Baca order (user yang login)\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/permissions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions"]
+            },
+            "description": "Tambah rule baru tanpa restart aplikasi. `sort_order` yang lebih kecil = prioritas lebih tinggi."
+          }
+        },
+        {
+          "name": "Update Permission Rule",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"http_method\": \"GET\",\n  \"url_pattern\": \"/api/orders/**\",\n  \"required_role\": \"ROLE_ADMIN\",\n  \"sort_order\": 50,\n  \"description\": \"Baca order (admin only)\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/permissions/{{permission_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", "{{permission_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Hapus Permission Rule",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/permissions/{{permission_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", "{{permission_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "External API",
+      "description": "Demo pemanggilan REST API eksternal via MicroProfile REST Client (JSONPlaceholder). Semua endpoint publik.",
+      "item": [
+        {
+          "name": "Semua Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Output adalah array', () => {",
+                  "    pm.expect(pm.response.json().output_schema).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/external/posts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "external", "posts"]
+            },
+            "description": "Ambil semua post dari JSONPlaceholder via MicroProfile REST Client."
+          }
+        },
+        {
+          "name": "Post by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/external/posts/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "external", "posts", "1"]
+            }
+          }
+        },
+        {
+          "name": "Post by User ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/external/posts/user/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "external", "posts", "user", "1"]
+            },
+            "description": "Ambil semua post milik userId=1 dari JSONPlaceholder."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Diagnostic",
+      "description": "Verifikasi status tracing OpenTelemetry. Endpoint publik.",
+      "item": [
+        {
+          "name": "Cek Trace Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status OK', () => {",
+                  "    pm.expect(pm.response.json().output_schema.status).to.eql('OK');",
+                  "});",
+                  "pm.test('traceId terisi (bukan 000...)', () => {",
+                  "    pm.expect(pm.response.json().output_schema.trace_active).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/diagnostic/trace",
+              "host": ["{{base_url}}"],
+              "path": ["api", "diagnostic", "trace"]
+            },
+            "description": "Verifikasi bahwa OpenTelemetry tracing berjalan. `trace_active: true` berarti traceId terisi dengan benar."
+          }
+        },
+        {
+          "name": "Cek Trace Info (dengan X-Request-Id custom)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Request-Id", "value": "trace-check-demo-123" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/diagnostic/trace",
+              "host": ["{{base_url}}"],
+              "path": ["api", "diagnostic", "trace"]
+            },
+            "description": "Demo X-Request-Id custom — cek log server untuk melihat requestId=trace-check-demo-123."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cache",
+      "description": "Manajemen cache. Butuh ROLE_ADMIN.",
+      "item": [
+        {
+          "name": "Bersihkan Semua Cache",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Pesan sukses', () => {",
+                  "    pm.expect(pm.response.json().output_schema).to.include('berhasil');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cache/cleanup",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cache", "cleanup"]
+            },
+            "description": "Invalidasi semua cache yang terdaftar (termasuk categories_with_product_count_cache). Setelah ini, panggil /api/categories/stats untuk trigger load ulang."
+          }
+        }
+      ]
+    },
+    {
+      "name": "File",
+      "description": "Upload dan download file. Butuh ROLE_USER atau lebih tinggi.",
+      "item": [
+        {
+          "name": "Upload File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "    const filename = pm.response.json().output_schema.filename;",
+                  "    pm.collectionVariables.set('uploaded_filename', filename);",
+                  "    console.log('Filename tersimpan:', filename);",
+                  "}",
+                  "pm.test('Ada download_url', () => {",
+                  "    pm.expect(pm.response.json().output_schema.download_url).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Pilih file untuk diupload"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/files/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "files", "upload"]
+            },
+            "description": "Upload file via multipart/form-data. Nama file tersimpan (dengan UUID prefix) akan otomatis masuk ke variable `uploaded_filename`."
+          }
+        },
+        {
+          "name": "Download File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Ada Content-Disposition', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('attachment');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/files/download/{{uploaded_filename}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "files", "download", "{{uploaded_filename}}"]
+            },
+            "description": "Download file berdasarkan nama file tersimpan. Gunakan variable `uploaded_filename` dari response Upload File."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "description": "Contoh request yang menghasilkan response error untuk verifikasi format error handling.",
+      "item": [
+        {
+          "name": "404 — Produk Tidak Ditemukan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Error code RST-002', () => {",
+                  "    pm.expect(pm.response.json().error_schema.error_code).to.eql('RST-002');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/99999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "99999"]
+            }
+          }
+        },
+        {
+          "name": "400 — Validasi Gagal (login tanpa username)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Error code RST-001', () => {",
+                  "    pm.expect(pm.response.json().error_schema.error_code).to.eql('RST-001');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "401 — Tanpa Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "403 — Akses Ditolak (user akses endpoint admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403', () => pm.response.to.have.status(403));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Category\",\n  \"description\": \"Test\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Jalankan setelah Login (User) — user biasa tidak punya ROLE_ADMIN, harusnya dapat 403."
+          }
+        },
+        {
+          "name": "409 — Duplikat (register username yang sudah ada)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Error code RST-003', () => {",
+                  "    pm.expect(pm.response.json().error_schema.error_code).to.eql('RST-003');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\",\n  \"full_name\": \"Admin Duplikat\",\n  \"email\": \"admin2@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
