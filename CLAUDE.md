@@ -426,8 +426,9 @@ Request → RequestIdFilter (isi traceId + requestId ke MDC)
 | sort_order | Method | Pattern | Role | Keterangan |
 |-----------|--------|---------|------|-----------|
 | 1 | `*` | `/error` | - | Error handler |
-| 2 | `*` | `/api/auth/**` | - | Login & register |
-| 3-7 | `*` | Swagger, OpenAPI, Health, Metrics, H2 | - | Dev tools |
+| 2 | `POST` | `/api/auth/login` | - | Login publik |
+| 3 | `POST` | `/api/auth/register` | - | Register publik |
+| 4-8 | `*` | Swagger, OpenAPI, Health, Metrics, H2 | - | Dev tools |
 | 10 | `GET` | `/api/products/**` | - | Publik |
 | 11 | `GET` | `/api/categories/**` | - | Publik |
 | 12 | `GET` | `/api/external/**` | - | Publik |

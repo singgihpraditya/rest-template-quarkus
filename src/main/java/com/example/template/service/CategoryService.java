@@ -1,6 +1,5 @@
 package com.example.template.service;
 
-import com.example.template.config.CacheConfig;
 import com.example.template.dto.request.CategoryRequest;
 import com.example.template.dto.response.CategoryResponse;
 import com.example.template.dto.response.PageResponse;
