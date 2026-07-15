@@ -55,7 +55,7 @@ Baca seluruh dokumen sebelum membuat atau mengubah kode.
 ## 3. Struktur Package
 
 ```
-com.example.template/
+com.example.template.quarkus/
 ├── aspect/
 │   ├── Logged.java                  ← @InterceptorBinding annotation
 │   └── LoggingInterceptor.java      ← CDI @Interceptor: log [ENTRY]/[EXIT]/durasi
